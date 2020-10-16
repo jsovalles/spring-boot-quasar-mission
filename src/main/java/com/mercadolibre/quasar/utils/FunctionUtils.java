@@ -35,23 +35,24 @@ public class FunctionUtils {
     public Position getLocation(List<SatelliteIn> satellites) {
 
         Position position = new Position();
-        double r0 = 0, r1 = 0, r2 = 0;
-
-        int x0 = kenobi[0];
-        int y0 = kenobi[1];
-        int x1 = skywalker[0];
-        int y1 = skywalker[1];
-        int x2 = sato[0];
-        int y2 = sato[1];
+        int cont = 0;
+        double[] x = new double[3], y = new double[3], r = new double[3];
 
         for (SatelliteIn satellite : satellites) {
             if (satellite.getName().equalsIgnoreCase("kenobi")) {
-                r0 = satellite.getDistance();
+                r[cont] = satellite.getDistance();
+                x[cont] = kenobi[0];
+                y[cont] = kenobi[1];
             } else if (satellite.getName().equalsIgnoreCase("skywalker")) {
-                r1 = satellite.getDistance();
+                r[cont] = satellite.getDistance();
+                x[cont] = skywalker[0];
+                y[cont] = skywalker[1];
             } else {
-                r2 = satellite.getDistance();
+                r[cont] = satellite.getDistance();
+                x[cont] = sato[0];
+                y[cont] = sato[1];
             }
+            cont = cont+1;
         }
 
         double a, dx, dy, d, h, rx, ry;
@@ -60,18 +61,18 @@ public class FunctionUtils {
         /* dx and dy are the vertical and horizontal distances between
          * the circle centers.
          */
-        dx = x1 - x0;
-        dy = y1 - y0;
+        dx = x[1] - x[0];
+        dy = y[1] - y[0];
 
         /* Determine the straight-line distance between the centers. */
         d = Math.sqrt((dy * dy) + (dx * dx));
 
         /* Check for solvability. */
-        if (d > (r0 + r1)) {
+        if (d > (r[0] + r[1])) {
             /* no solution. circles do not intersect. */
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "no solution, both satellites do not intersect");
         }
-        if (d < Math.abs(r0 - r1)) {
+        if (d < Math.abs(r[0] - r[1])) {
             /* no solution. one circle is contained in the other */
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "no solution, one satellite is contained in the other");
         }
@@ -82,16 +83,16 @@ public class FunctionUtils {
          */
 
         /* Determine the distance from point 0 to point 2. */
-        a = ((r0 * r0) - (r1 * r1) + (d * d)) / (2.0 * d);
+        a = ((r[0] * r[0]) - (r[1] * r[1]) + (d * d)) / (2.0 * d);
 
         /* Determine the coordinates of point 2. */
-        point2_x = x0 + (dx * a / d);
-        point2_y = y0 + (dy * a / d);
+        point2_x = x[0] + (dx * a / d);
+        point2_y = y[0] + (dy * a / d);
 
         /* Determine the distance from point 2 to either of the
          * intersection points.
          */
-        h = Math.sqrt((r0 * r0) - (a * a));
+        h = Math.sqrt((r[0] * r[0]) - (a * a));
 
         /* Now determine the offsets of the intersection points from
          * point 2.
@@ -108,18 +109,18 @@ public class FunctionUtils {
         //System.out.println("INTERSECTION Circle1 AND Circle2:" + "(" + intersectionPoint1_x + "," + intersectionPoint1_y + ")" + " AND (" + intersectionPoint2_x + "," + intersectionPoint2_y + ")");
 
         /* Lets determine if circle 3 intersects at either of the above intersection points. */
-        dx = intersectionPoint1_x - x2;
-        dy = intersectionPoint1_y - y2;
+        dx = intersectionPoint1_x - x[2];
+        dy = intersectionPoint1_y - y[2];
         double d1 = Math.sqrt((dy * dy) + (dx * dx));
 
-        dx = intersectionPoint2_x - x2;
-        dy = intersectionPoint2_y - y2;
+        dx = intersectionPoint2_x - x[2];
+        dy = intersectionPoint2_y - y[2];
         double d2 = Math.sqrt((dy * dy) + (dx * dx));
 
-        if (Math.abs(d1 - r2) < EPSILON) {
+        if (Math.abs(d1 - r[2]) < EPSILON) {
             position.setX(intersectionPoint1_x);
             position.setY(intersectionPoint1_y);
-        } else if (Math.abs(d2 - r2) < EPSILON) {
+        } else if (Math.abs(d2 - r[2]) < EPSILON) {
             position.setX(intersectionPoint2_x);
             position.setY(intersectionPoint2_y);
         } else {
